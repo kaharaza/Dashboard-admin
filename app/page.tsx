@@ -3,12 +3,18 @@ import { AlertMessage } from "@/components/AlertMessage";
 import images from "@/constant/images";
 import { motion } from "framer-motion";
 import Image from "next/image";
+import { useRouter } from "next/navigation";
 import { useState } from "react";
 
 export default function Home() {
+  const router = useRouter();
   const [alertMessage, setAlertMessage] = useState<boolean>(true);
   const handleClose = () => {
     setAlertMessage(false); // ล้าง message เมื่อปิด
+  };
+
+  const handleChangeDashboard = () => {
+    router.replace("/dashboard");
   };
 
   return (
@@ -33,13 +39,13 @@ export default function Home() {
               <div className="flex justify-center text-xl text-[#9878b0] font-bold ">
                 ระบบสารสนเทศ คณะสัตวแพทยศาสตร์ มหาวิทยาลัยเชียงใหม่
               </div>
-           
             </div>
             {alertMessage && (
               <AlertMessage message="Please login." onClose={handleClose} />
             )}
 
             <button
+              onClick={() => handleChangeDashboard()}
               type="button"
               className="bg-[#325e8c] py-3 px-4 text-white text-sm font-semibold rounded-md hover:bg-[#5584ab] cursor-pointer transition-all duration-300 ease-in-out"
             >
