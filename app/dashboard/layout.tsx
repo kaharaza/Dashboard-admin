@@ -2,8 +2,8 @@ import type { Metadata } from "next";
 import Layout from "@/components/Layout";
 
 export const metadata: Metadata = {
-  title: "Dashboard Admin Finance",
-  description: "Admin Dashboard for Finance Management",
+  title: "Dashboard Admin",
+  description: "Admin Dashboard Management",
 };
 
 export default function DashboardLayout({

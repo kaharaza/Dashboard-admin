@@ -1,3 +1,4 @@
+// components/Sidebar.tsx
 "use client";
 
 import Link from "next/link";
@@ -6,23 +7,27 @@ import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { icons } from "@/constant";
 import Image from "next/image";
+import { Tooltip } from "react-tooltip";
+import { menuSidebar } from "@/app/data/menuSidebar";
 
 export default function Sidebar() {
   const pathname = usePathname();
 
-  // ตรวจสอบว่า active ในหมวด "การเงินและพัสดุ" หรือไม่
-  const isFinanceActive =
-    pathname.startsWith("/dashboard/qr-code") || pathname === "#";
-
   // สถานะสำหรับ dropdown และขนาด Sidebar
-  const [isFinanceOpen, setIsFinanceOpen] = useState(isFinanceActive);
-  const [isExpanded, setIsExpanded] = useState<boolean>(
-    typeof window !== "undefined" && window.innerWidth >= 768
-  );
+  const [openDropdown, setOpenDropdown] = useState<string | null>(null);
+  const [isExpanded, setIsExpanded] = useState<boolean>(true);
 
-  // อัพเดตสถานะเมื่อ pathname เปลี่ยน
+  // ตรวจสอบว่า active ในหมวดที่มี dropdown หรือไม่
+  const isActiveDropdown = (dropdownlist: { part: string }[] = []) => {
+    return dropdownlist.some((item) => pathname === item.part); // เปลี่ยนจาก startsWith เป็น ===
+  };
+
+  // อัพเดตสถานะ dropdown เมื่อ pathname เปลี่ยน
   useEffect(() => {
-    setIsFinanceOpen(isFinanceActive);
+    const activeMenu = menuSidebar.find(
+      (menu) => menu.dropdownlist && isActiveDropdown(menu.dropdownlist)
+    );
+    setOpenDropdown(activeMenu ? activeMenu.name : null);
   }, [pathname]);
 
   // ตรวจสอบขนาดหน้าจอและอัพเดตสถานะ Sidebar
@@ -31,9 +36,8 @@ export default function Sidebar() {
       setIsExpanded(window.innerWidth >= 768);
     };
 
-    window.addEventListener("resize", handleResize);
     handleResize();
-
+    window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
@@ -63,138 +67,139 @@ export default function Sidebar() {
     },
   };
 
-  // Tooltip variants
-  const tooltipVariants = {
-    hidden: { opacity: 0, x: -10 },
-    visible: { opacity: 1, x: 0, transition: { duration: 0.2 } },
-  };
-
   return (
-    <motion.aside
-      initial={isExpanded ? "expanded" : "collapsed"}
-      animate={isExpanded ? "expanded" : "collapsed"}
-      variants={sidebarVariants}
-      className="bg-gray-800 text-white p-4 md:min-h-screen text-[12px] fixed h-full"
-    >
-      <div className="text-2xl font-bold mb-6 hidden md:block">Admin Panel</div>
-      <nav className="space-y-2">
-        {/* Dashboard */}
-        <motion.div
-          whileHover={!isExpanded ? "visible" : undefined}
-          className="relative"
-        >
-          <Link
-            href="/dashboard"
-            className={`flex items-center py-2 px-2 rounded-lg transition-colors ${
-              pathname === "/dashboard"
-                ? "bg-gray-900 text-white"
-                : "hover:bg-gray-700"
-            }`}
-          >
-            <Image src={icons.dashborad} alt="Dashboard" width={20} priority />
-            <span className="ml-2 hidden md:block">Dashboard</span>
-          </Link>
-          {!isExpanded && (
-            <motion.div
-              initial="hidden"
-              variants={tooltipVariants}
-              className="absolute left-16 top-1/2 -translate-y-1/2 bg-gray-900 text-white text-sm px-2 py-1 rounded"
-            >
-              Dashboard
-            </motion.div>
-          )}
-        </motion.div>
+    <>
+      <motion.aside
+        initial={isExpanded ? "expanded" : "collapsed"}
+        animate={isExpanded ? "expanded" : "collapsed"}
+        variants={sidebarVariants}
+        className="bg-gray-800 text-white p-4 min-h-screen text-[12px] fixed top-0 left-0 z-50"
+      >
+        <div className="text-2xl font-bold mb-6 hidden md:block">
+          Admin Panel
+        </div>
+        <nav className="space-y-2">
+          {menuSidebar.map((menu) => {
+            // ตรวจสอบ active state
+            const isActive =
+              (menu.href && pathname === menu.href) || // เมนูหลัก
+              (menu.dropdownlist && isActiveDropdown(menu.dropdownlist)); // เมนู dropdown
+            const isOpen = openDropdown === menu.name;
 
-        {/* Dropdown: การเงินและพัสดุ */}
-        <div>
-          <motion.div
-            whileHover={!isExpanded ? "visible" : undefined}
-            className="relative"
-          >
-            <button
-              onClick={() => setIsFinanceOpen(!isFinanceOpen)}
-              className={`w-full text-left py-2 px-2 rounded-lg transition-colors flex items-center justify-between ${
-                isFinanceActive ? "bg-gray-900 text-white" : "hover:bg-gray-700"
-              }`}
-            >
-              <div className="flex items-center">
-                <Image src={icons.finance} alt="Finance" width={20} priority />
-                <span className="ml-2 hidden md:block">การเงินและพัสดุ</span>
-              </div>
-              <span className="hidden md:block">
-                {isFinanceOpen ? "▲" : "▼"}
-              </span>
-            </button>
-            {!isExpanded && (
-              <motion.div
-                initial="hidden"
-                variants={tooltipVariants}
-                className="absolute left-16 top-1/2 -translate-y-1/2 bg-gray-900 text-white text-sm px-2 py-1 rounded"
-              >
-                การเงินและพัสดุ
-              </motion.div>
-            )}
-          </motion.div>
-
-          <motion.div
-            variants={dropdownVariants}
-            initial="hidden"
-            animate={isFinanceOpen ? "visible" : "hidden"}
-            className="space-y-2 mt-2 overflow-hidden pl-0 md:pl-0"
-          >
-            <motion.div
-              whileHover={!isExpanded ? "visible" : undefined}
-              className="relative"
-            >
-              <Link
-                href="/dashboard/qr-code"
-                className={`flex items-center py-2 px-2 rounded-lg transition-colors ${
-                  pathname === "/dashboard/qr-code"
-                    ? "bg-gray-900 text-white"
-                    : "hover:bg-gray-600"
+            return (
+              <div
+                key={menu.name}
+                className={` ${
+                  isActive
+                    ? "border-l-2 rounded-t-sm rounded-b-sm border-gray-100"
+                    : "border-none"
                 }`}
               >
-                <Image src={icons.qrcode} alt="QR Code" width={20} priority />
-                <span className="ml-2 hidden md:block">QR Code</span>
-              </Link>
-              {!isExpanded && (
-                <motion.div
-                  initial="hidden"
-                  variants={tooltipVariants}
-                  className="absolute left-16 top-1/2 -translate-y-1/2 bg-gray-900 text-white text-sm px-2 py-1 rounded"
-                >
-                  QR Code
-                </motion.div>
-              )}
-            </motion.div>
-          </motion.div>
-        </div>
+                {menu.dropdownlist ? (
+                  // เมนูที่มี Dropdown
+                  <div>
+                    <div className={`relative`}>
+                      <button
+                        onClick={() =>
+                          setOpenDropdown(isOpen ? null : menu.name)
+                        }
+                        className={`w-full text-left py-2 px-2 rounded-lg transition-colors flex items-center justify-between ${
+                          isActive
+                            ? "bg-gray-900 text-white"
+                            : "hover:bg-gray-700"
+                        }`}
+                        data-tooltip-id="sidebar-tooltip"
+                        data-tooltip-content={
+                          isExpanded ? undefined : menu.name
+                        }
+                        data-tooltip-place="right"
+                      >
+                        <div className="flex items-center">
+                          <Image
+                            src={icons[menu.icon as keyof typeof icons]}
+                            alt={menu.name}
+                            width={20}
+                            priority
+                          />
+                          <span className="ml-2 hidden md:block">
+                            {menu.name}
+                          </span>
+                        </div>
+                        <span className="hidden md:block">
+                          {isOpen ? "▲" : "▼"}
+                        </span>
+                      </button>
+                    </div>
 
-        {/* Settings */}
-        <motion.div
-          whileHover={!isExpanded ? "visible" : undefined}
-          className="relative"
-        >
-          <Link
-            href="#"
-            className={`flex items-center py-2 px-2 rounded-lg transition-colors ${
-              pathname === "#" ? "bg-gray-900 text-white" : "hover:bg-gray-700"
-            }`}
-          >
-            <Image src={icons.setting} alt="Settings" width={20} priority />
-            <span className="ml-2 hidden md:block">Settings</span>
-          </Link>
-          {!isExpanded && (
-            <motion.div
-              initial="hidden"
-              variants={tooltipVariants}
-              className="absolute left-16 top-1/2 -translate-y-1/2 bg-gray-900 text-white text-sm px-2 py-1 rounded"
-            >
-              Settings
-            </motion.div>
-          )}
-        </motion.div>
-      </nav>
-    </motion.aside>
+                    <motion.div
+                      variants={dropdownVariants}
+                      initial="hidden"
+                      animate={isOpen ? "visible" : "hidden"}
+                      className="space-y-2 mt-0 overflow-hidden pl-0 md:pl-0"
+                    >
+                      {menu.dropdownlist.map((subMenu) => (
+                        <div key={subMenu.name} className="relative">
+                          <Link
+                            href={subMenu.part}
+                            className={`flex items-center  mt-2 py-2 px-2 rounded-lg transition-colors ${
+                              pathname === subMenu.part
+                                ? "bg-gray-900 text-white"
+                                : "hover:bg-gray-600"
+                            }`}
+                            data-tooltip-id="sidebar-tooltip"
+                            data-tooltip-content={
+                              isExpanded ? undefined : subMenu.name
+                            }
+                            data-tooltip-place="right"
+                          >
+                            <Image
+                              src={icons[subMenu.icon as keyof typeof icons]}
+                              alt={subMenu.name}
+                              width={20}
+                              priority
+                            />
+                            <span className="ml-2 hidden md:block">
+                              {subMenu.name}
+                            </span>
+                          </Link>
+                        </div>
+                      ))}
+                    </motion.div>
+                  </div>
+                ) : (
+                  // เมนูปกติ (ไม่มี Dropdown)
+                  <div className="relative">
+                    <Link
+                      href={menu.href || "#"}
+                      className={`flex items-center py-2 px-2 rounded-lg transition-colors ${
+                        pathname === menu.href
+                          ? "bg-gray-900 text-white"
+                          : "hover:bg-gray-700"
+                      }`}
+                      data-tooltip-id="sidebar-tooltip"
+                      data-tooltip-content={isExpanded ? undefined : menu.name}
+                      data-tooltip-place="right"
+                    >
+                      <Image
+                        src={icons[menu.icon as keyof typeof icons]}
+                        alt={menu.name}
+                        width={20}
+                        priority
+                      />
+                      <span className="ml-2 hidden md:block">{menu.name}</span>
+                    </Link>
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </nav>
+      </motion.aside>
+
+      <Tooltip
+        id="sidebar-tooltip"
+        className="bg-gray-900 text-white text-sm px-2 py-1 rounded z-50"
+      />
+    </>
   );
 }
